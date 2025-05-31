@@ -21,3 +21,6 @@ tsconfig.json
 
 # shadcn/ui
 components.json
+
+# prisma
+generated
