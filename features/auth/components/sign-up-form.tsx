@@ -3,11 +3,22 @@
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import {
+  CircleAlert,
+  LoaderCircle,
+  Lock,
+  Mail,
+  TriangleAlert,
+  User,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { cn } from "@/lib/utils";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,10 +33,29 @@ import { Input } from "@/components/ui/input";
 import FormWrapper from "@/features/auth/components/wrapper";
 
 import { signUpSchema } from "@/schemas/auth";
-import { LoaderCircle, Lock, Mail, TriangleAlert, User } from "lucide-react";
+
+import { createUser } from "@/features/auth/services/user";
+
+import { IUserData, TCreateUserResponse } from "@/features/auth/types";
 
 const SignUpForm = () => {
-  const [isPending, setIsPending] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorStatus, setErrorStatus] = useState<number>();
+
+  const mutation = useMutation({
+    mutationFn: (values: IUserData) => createUser(values),
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        setErrorMessage(error.response?.data?.message);
+        setErrorStatus(error.response?.status);
+      }
+    },
+    onSuccess: (data: TCreateUserResponse) => {
+      setErrorMessage("");
+      setErrorStatus(201);
+      console.log(data);
+    },
+  });
 
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -37,9 +67,7 @@ const SignUpForm = () => {
   });
 
   const onSubmit = (values: z.infer<typeof signUpSchema>) => {
-    setIsPending(true);
-    console.log(values);
-    setIsPending(false);
+    mutation.mutate(values);
   };
 
   return (
@@ -50,6 +78,14 @@ const SignUpForm = () => {
       }
       type={"sign up"}
     >
+      {((errorMessage && errorStatus === 400) ||
+        errorStatus === 409 ||
+        errorStatus === 500) && (
+        <Alert variant={"destructive"}>
+          <CircleAlert />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
@@ -84,7 +120,7 @@ const SignUpForm = () => {
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
-                      disabled={isPending}
+                      disabled={mutation.isPending}
                     />
                   </div>
                 </FormControl>
@@ -128,7 +164,7 @@ const SignUpForm = () => {
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
-                      disabled={isPending}
+                      disabled={mutation.isPending}
                     />
                   </div>
                 </FormControl>
@@ -172,7 +208,7 @@ const SignUpForm = () => {
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
-                      disabled={isPending}
+                      disabled={mutation.isPending}
                     />
                   </div>
                 </FormControl>
@@ -188,9 +224,9 @@ const SignUpForm = () => {
           <Button
             type="submit"
             className="w-full cursor-pointer"
-            disabled={isPending}
+            disabled={mutation.isPending}
           >
-            {isPending ? (
+            {mutation.isPending ? (
               <>
                 <LoaderCircle className="animate-spin" />
                 <span>Please wait</span>
