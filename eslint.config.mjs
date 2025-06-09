@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.config({
     extends: ["next", "prettier"],
-    ignorePatterns: ["node_modules/", ".next/", "public/", "generated/"],
+    ignorePatterns: ["node_modules/", ".next/", "public/"],
     rules: {
       indent: ["error", 2],
       quotes: ["error", "double"],

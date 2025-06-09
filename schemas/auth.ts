@@ -24,3 +24,11 @@ export const signUpSchema = z.object({
       message: "Please use at least one special character!",
     }),
 });
+
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email required!" })
+    .email({ message: "This email is invalid!" }),
+  password: z.string().min(1, { message: "Password required!" }),
+});

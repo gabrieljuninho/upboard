@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 import {
   CircleAlert,
   LoaderCircle,
   Lock,
   Mail,
   TriangleAlert,
-  User,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { cn } from "@/lib/utils";
@@ -33,107 +31,61 @@ import { Input } from "@/components/ui/input";
 
 import FormWrapper from "@/features/auth/components/wrapper";
 
-import { signUpSchema } from "@/schemas/auth";
+import { loginSchema } from "@/schemas/auth";
 
-import { createUser } from "@/features/auth/services/user";
+import { login } from "@/features/auth/actions/login";
 
-import { IUserData, TCreateUserResponse } from "@/features/auth/types";
+const LoginForm = () => {
+  const [isPending, startTransition] = useTransition();
 
-const SignUpForm = () => {
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [errorStatus, setErrorStatus] = useState<number>();
+  const urlParams = useSearchParams();
 
-  const router = useRouter();
+  const callBackUrl = urlParams.get("callbackUrl");
+  const errorUrlParam =
+    urlParams.get("error") === "OAuthAccountNotLinked"
+      ? "This account is already linked to a user. Please sign in with a different account."
+      : "";
 
-  const mutation = useMutation({
-    mutationFn: (values: IUserData) => createUser(values),
-    onError: (error) => {
-      if (error instanceof AxiosError) {
-        setErrorMessage(error.response?.data?.message);
-        setErrorStatus(error.response?.status);
-      }
-    },
-    onSuccess: (data: TCreateUserResponse) => {
-      if (data) {
-        router.push("/login");
-      }
-    },
-  });
-
-  const form = useForm<z.infer<typeof signUpSchema>>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof signUpSchema>) => {
-    mutation.mutate(values);
+  const onSubmit = (values: z.infer<typeof loginSchema>) => {
+    startTransition(() => {
+      login(values, callBackUrl)
+        .then((data) => {
+          if (data?.error) {
+            form.reset();
+
+            toast.error(data.error);
+          }
+        })
+        .catch(() => {
+          toast.error("Something went wrong.");
+        });
+    });
   };
 
   return (
     <FormWrapper
-      title={"Create your account"}
+      title={"Login to your workspace"}
       description={
-        "Sign up to get started with organizing your tasks and collaborating with your team."
+        "Access your tasks, projects, and team collaboration by logging into your Upboard workspace."
       }
-      type={"sign up"}
+      type={"login"}
     >
-      {(errorStatus === 400 || errorStatus === 409 || errorStatus === 500) && (
+      {errorUrlParam && (
         <Alert variant={"destructive"}>
           <CircleAlert />
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>{errorUrlParam}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="data-[error=true]:text-foreground font-normal">
-                  Full Name
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <div className="absolute top-1/2 left-3 -translate-y-1/2">
-                      <User
-                        className={cn(
-                          "size-4",
-                          form.formState.errors.name
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                        )}
-                      />
-                    </div>
-                    <Input
-                      {...field}
-                      type="text"
-                      maxLength={76}
-                      placeholder="John Doe"
-                      autoComplete="off"
-                      className={cn(
-                        "pl-9 text-sm",
-                        form.formState.errors.name
-                          ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
-                          : ""
-                      )}
-                      disabled={mutation.isPending}
-                    />
-                  </div>
-                </FormControl>
-                <div className="flex items-center gap-1">
-                  {form.formState.errors.name && (
-                    <TriangleAlert className="text-destructive size-3" />
-                  )}
-                  <FormMessage className="text-xs" />
-                </div>
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="email"
@@ -165,7 +117,7 @@ const SignUpForm = () => {
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
-                      disabled={mutation.isPending}
+                      disabled={isPending}
                     />
                   </div>
                 </FormControl>
@@ -209,7 +161,7 @@ const SignUpForm = () => {
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
-                      disabled={mutation.isPending}
+                      disabled={isPending}
                     />
                   </div>
                 </FormControl>
@@ -225,15 +177,15 @@ const SignUpForm = () => {
           <Button
             type="submit"
             className="w-full cursor-pointer"
-            disabled={mutation.isPending}
+            disabled={isPending}
           >
-            {mutation.isPending ? (
+            {isPending ? (
               <>
                 <LoaderCircle className="animate-spin" />
                 <span>Please wait</span>
               </>
             ) : (
-              "Create an account"
+              "Login"
             )}
           </Button>
         </form>
@@ -242,4 +194,4 @@ const SignUpForm = () => {
   );
 };
 
-export default SignUpForm;
+export default LoginForm;

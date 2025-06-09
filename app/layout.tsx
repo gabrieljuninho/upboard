@@ -2,6 +2,8 @@ import { FC, ReactNode } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { SessionProvider } from "next-auth/react";
+
 import "@/styles/globals.css";
 
 const inter = Inter({
@@ -14,7 +16,11 @@ const inter = Inter({
 
 import { cn } from "@/lib/utils";
 
+import { Toaster } from "@/components/ui/sonner";
+
 import QueryProvider from "@/components/providers/query-provider";
+
+import { auth } from "@/auth";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,13 +31,18 @@ interface IRootLayoutProps {
   children: ReactNode;
 }
 
-const RootLayout: FC<IRootLayoutProps> = ({ children }) => {
+const RootLayout: FC<IRootLayoutProps> = async ({ children }) => {
+  const session = await auth();
+
   return (
-    <html lang="en">
-      <body className={cn("font-inter antialiased", inter.variable)}>
-        <QueryProvider>{children}</QueryProvider>
-      </body>
-    </html>
+    <SessionProvider session={session}>
+      <html lang="en">
+        <body className={cn("font-inter antialiased", inter.variable)}>
+          <QueryProvider>{children}</QueryProvider>
+          <Toaster />
+        </body>
+      </html>
+    </SessionProvider>
   );
 };
 
