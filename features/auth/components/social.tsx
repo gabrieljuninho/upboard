@@ -7,6 +7,7 @@ const Social = () => {
   return (
     <div className="flex items-center gap-4">
       <Button
+        type={"button"}
         variant={"outline"}
         className="hover:bg-secondary/80 flex-1 cursor-pointer gap-2"
         disabled
@@ -15,6 +16,7 @@ const Social = () => {
         <span>Google</span>
       </Button>
       <Button
+        type={"button"}
         variant={"outline"}
         className="hover:bg-secondary/80 flex-1 cursor-pointer gap-2"
         disabled

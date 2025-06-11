@@ -8,6 +8,8 @@ import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import {
   CircleAlert,
+  Eye,
+  EyeOff,
   LoaderCircle,
   Lock,
   Mail,
@@ -42,6 +44,7 @@ import { IUserData, TCreateUserResponse } from "@/features/auth/types";
 const SignUpForm = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [errorStatus, setErrorStatus] = useState<number>();
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const router = useRouter();
 
@@ -200,17 +203,25 @@ const SignUpForm = () => {
                     </div>
                     <Input
                       {...field}
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Minimum 8 characters"
                       autoComplete="off"
                       className={cn(
-                        "pl-9 text-sm",
+                        "px-9 text-sm",
                         form.formState.errors.password
                           ? "ring-destructive/20 border-destructive focus-visible:ring-destructive/20 focus-visible:border-destructive"
                           : ""
                       )}
                       disabled={mutation.isPending}
                     />
+                    <Button
+                      type={"button"}
+                      variant={"ghost"}
+                      className="absolute top-1/2 right-3 size-fit -translate-y-1/2 rounded-full p-0 has-[>svg]:px-0"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
                   </div>
                 </FormControl>
                 <div className="flex items-center gap-1">
